@@ -1,0 +1,49 @@
+import pandas as pd
+import os
+
+# 定义文件路径
+sheet1_file_path = r'C:\test\glorich_streams.csv'
+sheet2_file_path = r'C:\test\hydrochemistry.csv'
+output_file_path = r'C:\test\output_stream.xlsx'
+
+# 检查文件是否存在
+if not os.path.exists(sheet1_file_path):
+    print(f"文件 {sheet1_file_path} 不存在。")
+    exit()
+
+if not os.path.exists(sheet2_file_path):
+    print(f"文件 {sheet2_file_path} 不存在。")
+    exit()
+
+# 读取CSV文件，尝试使用ISO-8859-1编码
+try:
+    sheet1 = pd.read_csv(sheet1_file_path, encoding='ISO-8859-1')
+    sheet2 = pd.read_csv(sheet2_file_path, encoding='ISO-8859-1')
+except Exception as e:
+    print(e)
+    print("请确认CSV文件路径和编码格式无误。")
+    exit()
+
+# 打印前几行以确认数据是否正确读取
+print(sheet1.head())
+print(sheet2.head())
+
+# 初始化一个空的DataFrame用于存储匹配的行
+matched_rows = pd.DataFrame()
+
+# 遍历sheet1的第三列（索引2）
+for value in sheet1.iloc[:, 2]:
+    # 查找sheet2的第一列（索引0）中是否有匹配的值
+    matching_rows = sheet2[sheet2.iloc[:, 0] == value]
+    if not matching_rows.empty:
+        # 将匹配的行添加到matched_rows中
+        matched_rows = pd.concat([matched_rows, matching_rows], ignore_index=True)
+
+# 将匹配的行写入新的Excel文件中
+try:
+    with pd.ExcelWriter(output_file_path, engine='openpyxl') as writer:
+        matched_rows.to_excel(writer, sheet_name='Sheet4', index=False)
+    print("Processing complete. Check the output file for results.")
+except Exception as e:
+    print(e)
+    print("保存文件时出错，请确认输出路径是否正确。")
